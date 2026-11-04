@@ -26,6 +26,8 @@ const vis = new Visualizer(canvas, app);
 // ---------------------------------------------------------------- audio glue
 function ensureAudio() {
   if (!engine.ready) {
+    // iOS: let Web Audio play even when the ring/silent switch is on
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {}
     engine.init(app.state.rings.length, app.state.rings.map((r) => r.send));
     applyMix();
   }
@@ -83,7 +85,7 @@ function onBar(bar) {
       generateRing(r);
       resyncAll();
     }
-    changed({ undo: false });
+    changed();
   }
 }
 
@@ -112,13 +114,12 @@ function togglePlay() { seq.playing ? stop() : play(); }
 
 // ---------------------------------------------------------------- state changes
 let hashTimer = null;
-function changed({ undo = true, structure = false } = {}) {
+function changed({ structure = false } = {}) {
   if (structure) resyncAll();
   renderRings();
   renderEditor();
   clearTimeout(hashTimer);
   hashTimer = setTimeout(() => history.replaceState(null, '', '#' + encodeState(app.state)), 250);
-  void undo;
 }
 
 function pushUndo() {
@@ -310,10 +311,10 @@ function polyDesc(ring) {
   const pretty = Number.isInteger(perBeat) ? `${perBeat} per beat` : perBeat > 1 ? `${perBeat.toFixed(2)} per beat` : `1 every ${(1 / perBeat).toFixed(perBeat < 0.5 ? 0 : 2).replace(/\.00$/, '')} beats`;
   const filled = ring.notes.filter(Boolean).length;
   const note = ring.voice === 'drums'
-    ? 'Lanes, inside → out: kick ● snare ◆ clap ▲ hat ■'
+    ? 'Inside to out: kick ●, snare ◆, clap ▲, hat ■.'
     : ring.voice === 'pad'
-      ? 'Each dot holds a chord until the next one. Outward = higher chord.'
-      : 'Outward = higher pitch. Drag a dot in or out to re-pitch it.';
+      ? 'Each dot holds a chord until the next one. Further out is a higher chord.'
+      : 'Further out is higher. Drag a dot in or out to change its pitch.';
   return `<b>${ring.steps} steps</b> over ${barsLabel(ring.bars)} — ${pretty}. ${filled} note${filled === 1 ? '' : 's'}.<br>${note}`;
 }
 
@@ -428,7 +429,7 @@ const PRESET_NOTES = {
   'Polyrhythm 3·4·5·7': 'D dorian · 4 rhythms at once',
   'Lo-fi Sunday': 'F major · swung & dusty',
   'Gamelan Garden': 'E hirajoshi · bells',
-  'Midnight House': 'C minor · 124 BPM',
+  'Midnight House': 'C minor · 124 bpm',
 };
 function loadPreset(name) {
   loadState(PRESETS[name]());
@@ -456,19 +457,19 @@ function doGenerate(randomKey) {
   applyMix();
   changed({ structure: true });
   flashCanvas();
-  toast(randomKey ? `New idea in ${NOTE_NAMES[s.root]} ${s.scale} · ${s.bpm} BPM` : 'Fresh pattern generated');
+  toast(randomKey ? `${NOTE_NAMES[s.root]} ${s.scale.toLowerCase()}, ${s.bpm} bpm` : 'New loop');
   play();
 }
 function doMutate() {
   pushUndo();
   mutate(app.state, 3);
   changed();
-  toast('Mutated');
+  toast('Nudged a few notes');
 }
 function toggleEvolve() {
   app.evolve = !app.evolve;
   $('#evolveBtn').setAttribute('aria-pressed', app.evolve);
-  toast(app.evolve ? 'Evolve on — the pattern will slowly reinvent itself' : 'Evolve off');
+  toast(app.evolve ? 'Evolve on: the loop drifts every couple of bars' : 'Evolve off');
   if (app.evolve) play();
 }
 
@@ -480,7 +481,10 @@ $('#evolveBtn').addEventListener('click', toggleEvolve);
 $('#undoBtn').addEventListener('click', undo);
 $('#shareBtn').addEventListener('click', share);
 $('#recBtn').addEventListener('click', toggleRec);
-$('#panelToggle').addEventListener('click', () => document.body.classList.toggle('panel-open'));
+$('#panelToggle').addEventListener('click', (e) => {
+  const open = document.body.classList.toggle('panel-open');
+  e.currentTarget.setAttribute('aria-pressed', open);
+});
 
 async function share() {
   history.replaceState(null, '', '#' + encodeState(app.state));
@@ -491,7 +495,7 @@ async function share() {
       return;
     }
     await navigator.clipboard.writeText(url);
-    toast('Link copied — anyone who opens it hears your loop');
+    toast('Link copied. Whoever opens it hears this loop.');
   } catch {
     prompt('Copy this link', url);
   }
@@ -581,8 +585,8 @@ function flashCanvas() {
 // intro
 const intro = $('#intro');
 if (shared) {
-  $('#introTitle').textContent = 'Someone sent you a loop';
-  $('#introPlay').textContent = '▶  Play it';
+  $('#introTitle').innerHTML = 'Someone sent you <em>a&nbsp;loop.</em>';
+  $('#introPlay').textContent = 'Play it';
   app.painted = true;
   $('#hint').classList.add('gone');
 }
@@ -596,7 +600,7 @@ $('#introBlank').addEventListener('click', () => {
   s.rings.forEach((r) => { r.notes = r.notes.map(() => 0); });
   app.selected = 3;
   changed({ structure: true });
-  toast('Blank canvas — tap a ring to drop your first note');
+  toast('Empty. Tap a ring to start.');
 });
 
 // boot

@@ -17,7 +17,7 @@ There are no dependencies, no build step and no samples. All the sound is made l
 | **Mutate / Evolve** | Mutate makes small musical changes. Evolve keeps changing the loop every few bars, so it never repeats exactly. |
 | **Share** | The whole song is stored in the URL. Send the link and the other person hears exactly your loop. |
 | **Record** | Records the output to an audio file you can download. |
-| **Mix** | Swing, reverb ("Space"), a ping-pong delay synced to the tempo ("Echo"), and mute, solo and volume for each ring. |
+| **Mix** | Swing, reverb ("Room"), a ping-pong delay synced to the tempo ("Echo"), and mute, solo and volume for each ring. |
 | **Undo** | ⌘/Ctrl Z undoes changes. |
 
 ### Keyboard
@@ -46,10 +46,21 @@ css/style.css     styles (dark, glassy, responsive; bottom sheet on mobile)
 js/main.js        UI wiring, painting input, transport, share/record/undo
 js/audio.js       Web Audio engine: synth voices, reverb, delay, compressor, analyser
 js/sequencer.js   lookahead scheduler on a shared beat clock (polyrhythms stay in phase)
-js/visuals.js     canvas renderer: rings, comet playheads, particles, spectrum hub
+js/visuals.js     canvas renderer: dial bezel, rings, playheads, particles, spectrum hub
 js/music.js       scales, Euclidean rhythms, generator & mutator
 js/state.js       ring definitions, presets, URL encoding
 ```
 
 - **Timing**: notes are scheduled about 120 ms ahead on the audio clock, so playback stays tight even when the page is busy. Every ring's position comes from one shared beat clock, so changing the tempo or a ring's step count never knocks the rings out of sync.
+- **Background tabs**: the scheduler is driven by a Web Worker timer, so playback doesn't stutter when you switch tabs.
 - **Sounds**: everything is synthesised. The kick is a sine with a pitch drop, the snare, clap and hat are filtered noise, the bass and pluck are filtered sawtooth stacks, the bell uses FM synthesis, and the pad is detuned sawtooth chords.
+
+## Design
+
+Warm black background, cream text, and one signal-orange accent. The rings use flat, print-like ink colours: violet, orange, yellow, teal and pink. Type is *Instrument Serif* for display, *Instrument Sans* for body text and *JetBrains Mono* for controls and readouts. The orbit has a clock-dial bezel, the play button in the middle doubles as the hub, and notes are flat dots with a dark outline. The aim is something that feels like a piece of hardware rather than a web template.
+
+## Known limitations
+
+- Notes can only be placed with a mouse or touch. The rest of the app works from the keyboard.
+- Recording uses `MediaRecorder`, so the file is WebM/Opus in Chrome and Firefox and MP4/AAC in Safari, not WAV.
+- Share links store the pattern, key, tempo, swing, effects and each ring's volume and mute. They don't store master volume or solo.

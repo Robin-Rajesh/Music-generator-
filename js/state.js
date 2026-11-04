@@ -3,11 +3,11 @@ import { SCALE_NAMES } from './music.js';
 
 export const RING_DEFS = [
   // inner → outer. `rows` = pitch lanes across the ring band (inner = low).
-  { voice: 'pad', name: 'Pad', rows: 8, octave: 3, color: '#b98cff', send: 0.55 },
-  { voice: 'bass', name: 'Bass', rows: 8, octave: 1, color: '#ffb35c', send: 0.08 },
-  { voice: 'drums', name: 'Drums', rows: 4, octave: 0, color: '#ff5f8f', send: 0.12 },
-  { voice: 'pluck', name: 'Pluck', rows: 8, octave: 4, color: '#4ff0c0', send: 0.3 },
-  { voice: 'bell', name: 'Bell', rows: 8, octave: 5, color: '#62a8ff', send: 0.6 },
+  { voice: 'pad', name: 'Pad', rows: 8, octave: 3, color: '#8a7cff', send: 0.55 },
+  { voice: 'bass', name: 'Bass', rows: 8, octave: 1, color: '#ff5b14', send: 0.08 },
+  { voice: 'drums', name: 'Drums', rows: 4, octave: 0, color: '#f5c518', send: 0.12 },
+  { voice: 'pluck', name: 'Pluck', rows: 8, octave: 4, color: '#19c39c', send: 0.3 },
+  { voice: 'bell', name: 'Bell', rows: 8, octave: 5, color: '#ff6fae', send: 0.6 },
 ];
 
 export const DRUM_NAMES = ['Kick', 'Snare', 'Clap', 'Hat'];

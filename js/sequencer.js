@@ -18,6 +18,15 @@ export class Sequencer {
     this.bpm = 120;
     this.lastBar = -1;
     this._timer = null;
+    // Drive the scheduler from a Worker: main-thread timers get throttled to ~1/s
+    // in background tabs, which would make the music stutter.
+    try {
+      const src = `let id=null;onmessage=(e)=>{clearInterval(id);id=null;if(e.data==='start')id=setInterval(()=>postMessage(0),${TICK_MS});};`;
+      this.worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+      this.worker.onmessage = () => { if (this.playing) this._tick(); };
+    } catch {
+      this.worker = null;
+    }
   }
 
   beatAt(t) { return this.anchorBeat + ((t - this.anchorTime) * this.bpm) / 60; }
@@ -34,12 +43,14 @@ export class Sequencer {
     this.cursors = state.rings.map(() => ({ k: 0, lastBeat: -1 }));
     this.playing = true;
     this._tick();
-    this._timer = setInterval(() => this._tick(), TICK_MS);
+    if (this.worker) this.worker.postMessage('start');
+    else this._timer = setInterval(() => this._tick(), TICK_MS);
   }
 
   stop() {
     this._pausedBeat = 0;
     this.playing = false;
+    if (this.worker) this.worker.postMessage('stop');
     clearInterval(this._timer);
     this._timer = null;
   }
